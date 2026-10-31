@@ -5,23 +5,30 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 
 const registerUser = asyncHandler(async (req,res) => {
-    const {fullname,email,username,password} = req.body;
-    console.log(fullname,email,username,password);
+    const {fullName,email,username,password} = req.body;
+    console.log(fullName,email,username,password);
 
-    if([fullname,email,username,password].some((field) => field?.trim()==="")){
+    if([fullName,email,username,password].some((field) => field?.trim()==="")){
         throw new ApiError(400,"All fields are required")
     }
 
-    const existedUser = User.findOne({ 
+    const existedUser = await User.findOne({ 
         $or:[{username},{email}]
     })
 
     if(existedUser){
         throw new ApiError(409,"User already exists")
     }  
+    console.log(req.files);
 
-    const avatarLocalPath = req.files?.avatar[0]?.path 
-    const coverImageLocalPath = req.files?.coverImage[0]?.path
+    const avatarLocalPath = req.files?.avatar?.[0]?.path 
+    // const coverImageLocalPath = req.files?.coverImage?.[0]?.path
+
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageLocalPath = req.files.coverImage[0].path; 
+    }
+
 
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar is required")
@@ -37,7 +44,7 @@ const registerUser = asyncHandler(async (req,res) => {
     const user = await User.create({
         username:username.toLowerCase(),
         email:email.toLowerCase(),
-        fullName:fullname,
+        fullName:fullName,
         password:password,
         avatar:avatar.url,
         coverImage:coverImage?.url || ""
@@ -52,7 +59,7 @@ const registerUser = asyncHandler(async (req,res) => {
     }
 
     return res.status(201).json(
-        new ApiResponse(200,"User registered successfully",createdUser)
+        new ApiResponse(200,createdUser,"User registered successfully")
     )
 
 })

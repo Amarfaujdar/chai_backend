@@ -20,5 +20,17 @@ import userRouter from "./routes/user.routes.js"
 //routes declaration
 app.use("/api/v1/users",userRouter)
 
+// Global error handler — must be AFTER all routes (4 params required by Express)
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    return res.status(statusCode).json({
+        success: false,
+        statusCode,
+        message,
+        errors: err.errors || []
+    });
+});
 
 export {app}
